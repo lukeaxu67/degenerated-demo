@@ -28,7 +28,7 @@ const fallbackTokenize = (text: string): string[] =>
   text
     .toLowerCase()
     .replace(/[\u3000-\u303F\uFF00-\uFFEF\s\n\r]+/g, " ")
-    .split(/[\s,，。！!?？！“”'"（）()【】[\]、\\\/]+/)
+    .split(/[\s,，。！!?？！“�?"（）()【】[\]、\\\/]+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
@@ -49,4 +49,19 @@ export const tokenize = (text: string): string[] => {
     return fallbackTokenize(text);
   }
 };
+
+// ========= Analysis helpers (do not change core tokenize()) =========
+
+/**
+ * Remove sentence / phrase punctuation from tokens for downstream metrics.
+ * This keeps token boundaries from jieba / fallback untouched, but lets
+ * entropy / repetition / overlap ignore pure punctuation noise.
+ * We keep this conservative: only common sentence/phrase delimiters.
+ */
+const SENTENCE_PUNCTUATION_REGEX = /[,.!?，。！？；;：:、]/g;
+
+export const stripSentencePunctuationFromTokens = (tokens: string[]): string[] =>
+  tokens
+    .map((t) => t.replace(SENTENCE_PUNCTUATION_REGEX, "").trim())
+    .filter((t) => t.length > 0);
 

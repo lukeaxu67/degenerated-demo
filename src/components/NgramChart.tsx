@@ -12,25 +12,66 @@ interface Props {
 }
 
 export default function NgramChart({ tokens, n }: Props) {
-  if (tokens.length < n) return <div>长度不足，无法生成 {n}-gram</div>;
+  if (tokens.length < n) return <div>长度不足，无法生成 {n}-gram。</div>;
 
-  const ngrams: Ngram[] = [];
+  // 构造 n-gram 频次
+  const freq: Record<string, number> = {};
   for (let i = 0; i <= tokens.length - n; i++) {
     const gram = tokens.slice(i, i + n).join(" ");
-    const existing = ngrams.find((g) => g.ngram === gram);
-    if (existing) existing.count++;
-    else ngrams.push({ ngram: gram, count: 1 });
+    freq[gram] = (freq[gram] || 0) + 1;
   }
 
-  const repeated = ngrams.filter((g) => g.count > 1);
-  const data = repeated.length > 0 ? repeated : ngrams.slice(0, 15);
+  const ngrams: Ngram[] = Object.entries(freq).map(([ngram, count]) => ({
+    ngram,
+    count,
+  }));
+
+  const totalNgrams = ngrams.length;
+  const repeatedNgrams = ngrams.filter((g) => g.count > 1).length;
+
+  const treemapData = ngrams
+    .sort((a, b) => b.count - a.count)
+    .map((g) => ({
+      name: g.ngram,
+      value: g.count,
+    }));
 
   const option = {
-    tooltip: {},
-    xAxis: { type: "value" },
-    yAxis: { type: "category", data: data.map((d) => d.ngram) },
-    series: [{ type: "bar", data: data.map((d) => ({ value: d.count, itemStyle: { color: d.count > 1 ? "#ff4d4f" : "#1890ff" } })) }],
+    tooltip: {
+      formatter: (params: any) => {
+        return `${params.name}: 出现 ${params.value} 次`;
+      },
+    },
+    series: [
+      {
+        type: "treemap",
+        roam: false,
+        nodeClick: false,
+        label: {
+          show: true,
+          formatter: (info: any) => {
+            const name: string = info.name || "";
+            const count: number = info.value || 0;
+            const short =
+              name.length > 20 ? name.slice(0, 20) + "…" : name;
+            return `${short}\n(${count})`;
+          },
+        },
+        upperLabel: { show: false },
+        data: treemapData,
+      },
+    ],
   };
 
-  return <ReactECharts option={option} style={{ height: Math.max(300, data.length * 35) }} />;
+  return (
+    <div>
+      <div style={{ marginBottom: 8 }}>
+        本轮共生成 {totalNgrams} 个 {n}-gram，其中
+        {repeatedNgrams} 个模式出现了两次及以上。矩形越大，表示该
+        {n}-gram 在回复中的重复越严重。
+      </div>
+      <ReactECharts option={option} style={{ height: 320 }} />
+    </div>
+  );
 }
+

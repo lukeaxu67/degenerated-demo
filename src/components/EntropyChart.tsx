@@ -10,17 +10,35 @@ export default function EntropyChart({ tokens }: Props) {
   tokens.forEach((t) => (counts[t] = (counts[t] || 0) + 1));
   const total = tokens.length;
 
-  const data = Object.entries(counts)
+  const rawData = Object.entries(counts)
     .map(([token, count]) => ({
       name: token,
       value: count,
-      prob: Number((count / total).toFixed(4)),
     }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 30);
+    .sort((a, b) => b.value - a.value);
+
+  const top = rawData.slice(0, 25);
+  const others = rawData.slice(25);
+  const othersCount = others.reduce((sum, d) => sum + d.value, 0);
+  const data =
+    othersCount > 0
+      ? [...top, { name: "其他", value: othersCount }]
+      : top;
 
   const option = {
-    tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
+    tooltip: {
+      trigger: "item",
+      formatter: (params: any) => {
+        const p = total > 0 ? params.value / total : 0;
+        const probStr = p.toFixed(4);
+        const percentStr = params.percent?.toFixed
+          ? params.percent.toFixed(1)
+          : "";
+        return `${params.name}: 次数=${params.value}, p=${probStr}${
+          percentStr ? `（${percentStr}%）` : ""
+        }`;
+      },
+    },
     series: [
       {
         type: "pie",
