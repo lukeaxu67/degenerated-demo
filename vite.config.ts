@@ -6,7 +6,7 @@ import compression from 'vite-plugin-compression'
 export default defineConfig({
   // GitHub Pages base path, must match repository name
   // e.g. https://lukeaxu67.github.io/degenerated-demo/
-  base: '/degenerated-demo/',
+  base: '/degeneration-demo/',
   plugins: [
     react(),
     compression({
