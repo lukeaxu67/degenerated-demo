@@ -4,6 +4,9 @@ import compression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages base path, must match repository name
+  // e.g. https://lukeaxu67.github.io/degenerated-demo/
+  base: '/degenerated-demo/',
   plugins: [
     react(),
     compression({
@@ -12,6 +15,7 @@ export default defineConfig({
     })
   ],
   define: {
-    global: "globalThis",   // 关键：把所有 global 替换成 globalThis
+    // Replace Node-style global with browser-safe globalThis
+    global: 'globalThis',
   },
 })
