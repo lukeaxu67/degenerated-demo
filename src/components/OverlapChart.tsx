@@ -4,6 +4,7 @@ import ReactECharts from "echarts-for-react";
 interface Props {
   prevTokens?: string[] | null;
   currTokens: string[];
+  overlap_previous: number; 
 }
 
 const buildCounter = (tokens: string[]): Record<string, number> => {
@@ -14,13 +15,11 @@ const buildCounter = (tokens: string[]): Record<string, number> => {
   return c;
 };
 
-export default function OverlapChart({ prevTokens, currTokens }: Props) {
+export default function OverlapChart({ prevTokens, currTokens, overlap_previous}: Props) {
   if (!prevTokens || prevTokens.length === 0) {
     return (
       <div>
-        本轮是第一轮助手回复，没有上一轮对话用于计算重叠率。
-        重叠率在这里被定义为两个 token 集合的 Jaccard 指数：
-        <code>J(A,B) = |A ∩ B| / |A ∪ B|</code>。从第二轮开始，我们会展示具体的重叠词分布。
+        本轮是第一轮助手回复，没有上一轮对话用于计算重叠率。从第二轮开始，我们会展示具体的重叠词分布。
       </div>
     );
   }
@@ -83,7 +82,7 @@ export default function OverlapChart({ prevTokens, currTokens }: Props) {
   return (
     <div>
       <div style={{ marginBottom: 8 }}>
-        下图展示的是连续两轮回复中重复出现的 token 频次分布（取前 30 个）。蓝色柱子对应上一轮，橙色柱子对应本轮。
+        本轮内容和前轮内容计算得重叠率为 {overlap_previous.toFixed(3)} 。下图中蓝色柱子对应上一轮，橙色柱子对应本轮。
       </div>
       <ReactECharts option={option} style={{ height: 320 }} />
     </div>

@@ -1,6 +1,4 @@
 export const DEFAULT_FALLBACK_PHRASES = [
-  "作为一个AI",
-  "作为人工智能",
   "我是一个语言模型",
   "我不能提供",
   "我无法回答",

@@ -3,6 +3,7 @@ import { Tabs, Card, Space, Typography, Divider, Tag, Alert } from "antd";
 import { initJieba } from "./utils/tokenizer";
 import { DEFAULT_FALLBACK_PHRASES } from "./utils/phrases";
 import TokenHighlighter from "./components/TokenHighlighter";
+import { ClarityProvider } from "./components/ClarityProvider";
 import EntropyChart from "./components/EntropyChart";
 import NgramChart from "./components/NgramChart";
 import OverlapChart from "./components/OverlapChart";
@@ -45,7 +46,7 @@ export default function App() {
     >
       <Title level={2}>LLM评测：对话退化度量</Title>
       <Paragraph>
-        本文是面向技术读者的「对话退化」分析实验台。它将大模型在对话中的回复进行量化拆解，从四个维度刻画其退化特征：熵减率、复读率、重叠率与规避性，并提供直观的可视化解释。
+        本文是面向技术读者的「对话退化」分析实验台。它将大模型在对话中的回复进行量化拆解，从四个维度刻画其退化特征：熵减率、复读率、重叠率与规避性，并提供直观的可视化解释。本文提到的 token 序列是指分词器（例如 jieba ）处理后的结果，区别于特定语言模型的分词。
       </Paragraph>
 
       <Card title="摘要指引" style={{ marginBottom: 16 }}>
@@ -105,7 +106,7 @@ export default function App() {
 
       <Space orientation="vertical" size="large" style={{ width: "100%" }}>
         {/* 示例选择 */}
-        <Card title="快速示例">
+        <Card title="快速示例（点击切换）">
           <Space>
             <Tag
               color={turns === SAMPLE_CONVERSATIONS[0].turns ? "green" : "default"}
@@ -119,7 +120,14 @@ export default function App() {
               style={{ cursor: "pointer" }}
               onClick={() => setTurns(SAMPLE_CONVERSATIONS[1].turns)}
             >
-              拒答退化
+              内容重复
+            </Tag>
+            <Tag
+              color={turns === SAMPLE_CONVERSATIONS[2].turns ? "blue" : "default"}
+              style={{ cursor: "pointer" }}
+              onClick={() => setTurns(SAMPLE_CONVERSATIONS[2].turns)}
+            >
+              规避回答
             </Tag>
           </Space>
         </Card>
@@ -209,7 +217,7 @@ export default function App() {
                           。
                         </Paragraph>
                         <Paragraph type="secondary">
-                          下方的扇形图展示了去标点后 token 的经验分布：最多展示 25
+                          下方的扇形图展示了去标点后 token 的经验分布：最多展示 60
                           个概率最大的 token，其余合并为其他。
                         </Paragraph>
                         <EntropyChart tokens={turn.analysis_tokens} />
@@ -222,31 +230,23 @@ export default function App() {
                         <NgramChart tokens={turn.analysis_tokens} n={ngramSize} />
                       </Card>
 
-                      <Card title="跨轮重叠率（与上一轮的复读情况）">
+                      <Card title="重叠率">
                         <Paragraph>
-                          对连续两轮助手回复，我们计算去重后的 token 集合的 Jaccard 指数：
-                        </Paragraph>
-                        <LatexBlock>
-                          {String.raw`J(A,B) = \frac{|A \cap B|}{|A \cup B|}`}
-                        </LatexBlock>
-                        <Paragraph>
-                          它刻画的是两轮回复在用词层面上的复用程度，下方柱状图展示的是重复出现 token
-                          在前后两轮中的频次分布（取前 30 个）。
+                          重叠率刻画的是两轮回复在用词层面上的复用程度，下方柱状图展示的是重复出现 token 在前后两轮中的频次分布（取前 30 个展示）。
                         </Paragraph>
                         <OverlapChart
                           prevTokens={prevTurn?.analysis_tokens ?? null}
                           currTokens={turn.analysis_tokens}
+                          overlap_previous={turn.overlap_previous}
                         />
                       </Card>
 
-                      <Card title="拒答退化模式匹配">
+                      <Card title="规避性">
                         <Paragraph>
-                          我们预置了一组典型的拒答式模板短语，只要回复中命中任意一条，就视为存在明显的「AI
-                          拒绝式」退化风险。
+                          若模型回复命中任意一条预置的典型规避回答模板短语，就视为存在明显的拒答式退化风险。
                         </Paragraph>
                         <Paragraph>
-                          当前内置的拒答模式短语共{" "}
-                          <Text code>{DEFAULT_FALLBACK_PHRASES.length}</Text> 条：
+                          当前内置的拒答模式短语共 {DEFAULT_FALLBACK_PHRASES.length} 条：
                         </Paragraph>
                         <Space wrap>
                           {DEFAULT_FALLBACK_PHRASES.map((p) => (
@@ -255,7 +255,7 @@ export default function App() {
                               color={
                                 turn.fallback_matches.includes(p)
                                   ? "red"
-                                  : "default"
+                                  : "blue"
                               }
                             >
                               {p}
@@ -266,42 +266,40 @@ export default function App() {
                           本轮命中模式数量：{" "}
                           <Text code>{turn.fallback_matches.length}</Text>{" "}
                           {turn.fallback_matches.length > 0
-                            ? "（存在明显的拒答退化倾向）"
+                            ? "（存在明显的规避倾向）"
                             : "（未检测到典型的拒答模板）"}
                         </Paragraph>
                       </Card>
 
-                      <Card title="综合退化评分分解">
+                      <Card title="本轮评分总结">
                         <Paragraph>
-                          综合退化分数通过对四项子指标做简单平均得到，
-                          每一项都被归一化到 [0,1] 区间：
+                          退化分数通过对四项子指标做简单平均得到，每一项都被归一化到 [0,1] 区间：
                         </Paragraph>
                         <Space size="large">
                           <div>
-                            重复率（{ngramSize}-gram）：{" "}
+                            熵减率：{" "}
+                            {(turn.normalized_entropy * 100).toFixed(1)}%
+                          </div>
+                          <div>
+                            复读率：{" "}
                             {(turn.repetition_ratio * 100).toFixed(1)}%
                           </div>
                           <div>
-                            与上一轮重叠率：{" "}
+                            重叠率：{" "}
                             {(turn.overlap_previous * 100).toFixed(1)}%
                           </div>
                           <div>
-                            拒答模式命中：{" "}
-                            {turn.fallback_hit ? "是（1）" : "否（0）"}
-                          </div>
-                          <div>
-                            低多样性（1 - H_norm）：{" "}
-                            {(turn.normalized_entropy * 100).toFixed(1)}%
+                            规避性：{" "}
+                            {turn.fallback_hit ? "100.0%" : "0.0%"}
                           </div>
                         </Space>
                         <Divider />
                         <Title level={4}>
-                          本轮 Degeneration Score：{" "}
+                          本轮评分：{" "}
                           {turn.degeneration_score.toFixed(3)}
                         </Title>
                         <Paragraph type="secondary">
-                          这个分数并不是一个「绝对正确」的退化判定，而是把多种退化现象（重复、复读、拒答模板、低熵）
-                          压缩到一个可比较的尺度上，方便在不同对话样本之间做横向分析。
+                          提示：这个分数并不是一个绝对正确的退化判定，而是把多种退化现象压缩到一个可比较的尺度上，方便在不同对话样本之间做横向分析。
                         </Paragraph>
                       </Card>
                     </Space>
@@ -312,6 +310,7 @@ export default function App() {
           </>
         )}
       </Space>
+      <ClarityProvider projectId="ualakd1qip" />
     </div>
   );
 }

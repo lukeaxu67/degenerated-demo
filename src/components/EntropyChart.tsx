@@ -17,8 +17,8 @@ export default function EntropyChart({ tokens }: Props) {
     }))
     .sort((a, b) => b.value - a.value);
 
-  const top = rawData.slice(0, 25);
-  const others = rawData.slice(25);
+  const top = rawData.slice(0, 60);
+  const others = rawData.slice(60);
   const othersCount = others.reduce((sum, d) => sum + d.value, 0);
   const data =
     othersCount > 0
