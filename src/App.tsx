@@ -119,13 +119,13 @@ export default function App() {
               style={{ cursor: "pointer" }}
               onClick={() => setTurns(SAMPLE_CONVERSATIONS[1].turns)}
             >
-              严重退化（经典 AI 拒绝式）
+              拒答退化
             </Tag>
           </Space>
         </Card>
 
         {/* 手动编辑对话 */}
-        <Card title="对话记录（可编辑，支持粘贴实际对话）">
+        <Card title="对话记录（可编辑）">
           {turns.map((turn, i) => (
             <div key={i} style={{ marginBottom: 12 }}>
               <strong>{turn.role === "user" ? "User" : "Assistant"}:</strong>{" "}
@@ -143,28 +143,19 @@ export default function App() {
         </Card>
 
         {isError ? (
-          <Alert type="error" message={result.error} />
+          <Alert type="error" title={result.error} />
         ) : (
           <>
-            <Card title="整体退化概览">
+            <Card title="退化水平得分">
               <Paragraph>
-                对当前对话中的所有助手回复，我们计算了每一轮的退化得分，并给出了平均分与峰值。
+                对上面对话中的所有Assistant内容，计算得到平均退化得分为<Text code>{result.average_score.toFixed(3)}</Text>。
               </Paragraph>
-              <Space size="large">
-                <div>
-                  平均 Degeneration Score：{" "}
-                  <Text code>{result.average_score.toFixed(3)}</Text>
-                </div>
-                <div>
-                  最高 Degeneration Score：{" "}
-                  <Text code>{result.peak_score.toFixed(3)}</Text>
-                </div>
-              </Space>
-              <Paragraph type="secondary" style={{ marginTop: 8 }}>
-                这里的综合得分简单地把四项子指标（{ngramSize}-gram 重复率、跨轮重叠率、
-                拒答退化命中、低信息熵）做归一化之后求平均，取值范围为 [0,1]，
-                越接近 1 表示退化越严重。
+              <Paragraph>
+                下面展开介绍每一轮的计算过程。
               </Paragraph>
+              {/* <Paragraph type="secondary" style={{ marginTop: 8 }}>
+                这里的平均退化得分简单地将多轮四项归一化的子指标求平均，取值范围为 [0,1]，越接近 1 表示退化越严重。
+              </Paragraph> */}
             </Card>
 
             {/* 逐轮详细分析 */}
@@ -179,7 +170,7 @@ export default function App() {
                   label: `第 ${idx + 1} 轮助手回复`,
                   children: (
                     <Space
-                      direction="vertical"
+                      orientation="vertical"
                       size="middle"
                       style={{ width: "100%" }}
                     >
@@ -191,7 +182,7 @@ export default function App() {
 
                       <Card title="分词与预处理">
                         <Paragraph>
-                          本工具优先使用 wasm 版 jieba 进行中文分词；如果加载失败，则退回到一个简单的正则
+                          本工具使用 jieba 进行中文分词；如果加载失败，则退回到一个简单的正则
                           tokenizer。首先在原文上获得 token 序列，然后再从 token 中剥离句号、逗号、问号等句读标点，
                           只保留真正承载语义的信息 token。
                         </Paragraph>
