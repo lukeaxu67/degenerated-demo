@@ -16,7 +16,7 @@ const { Title, Paragraph, Text } = Typography;
 
 export default function App() {
   const [turns, setTurns] = useState<Turn[]>(SAMPLE_CONVERSATIONS[1].turns);
-  const [ngramSize] = useState(3);
+  const [ngramSize] = useState(2);
 
   useEffect(() => {
     // 初始化 jieba，完成后强制刷新一次，让分词结果基于 jieba 重新计算

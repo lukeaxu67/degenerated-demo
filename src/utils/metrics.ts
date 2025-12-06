@@ -112,7 +112,7 @@ const collectFallbackMatches = (text: string, phrases: string[]): string[] => {
 
 export const calculateDegenerationMetric = (
   conversation: Turn[],
-  ngramSize = 3,
+  ngramSize = 2,
   fallbackPhrases?: string[]
 ): MetricResult => {
   const phrases = fallbackPhrases || DEFAULT_FALLBACK_PHRASES;
